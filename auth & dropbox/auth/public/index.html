@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auth0 Login</title>
+    <script src="https://cdn.auth0.com/js/auth0-spa-js/1.19/auth0-spa-js.production.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 50px;
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 0 4px;
+            transition-duration: 0.4s;
+        }
+
+        button:hover {
+            background-color: white;
+            color: black;
+            border: 2px solid #4CAF50;
+        }
+
+        #user-profile {
+            margin-top: 20px;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Auth0 Integration Example</h1>
+    <button id="login-btn">Login</button>
+    <button id="logout-btn" style="display: none;">Logout</button>
+    <div id="user-profile"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const auth0 = await createAuth0Client({
+                domain: 'dev-rw0jbecmd0oawtq7.us.auth0.com',
+                client_id: 'EYga6e8Mx4gbanrQSXzRUJizQmciolQX',
+                redirect_uri: 'http://localhost:3000'
+            });
+
+            const updateUI = async () => {
+                const isAuthenticated = await auth0.isAuthenticated();
+                document.getElementById('login-btn').style.display = isAuthenticated ? 'none' : 'block';
+                document.getElementById('logout-btn').style.display = isAuthenticated ? 'block' : 'none';
+
+                if (isAuthenticated) {
+                    const user = await auth0.getUser();
+                    document.getElementById('user-profile').textContent = `Welcome, ${user.name}`;
+                } else {
+                    document.getElementById('user-profile').textContent = '';
+                }
+            };
+
+            const login = async () => {
+                await auth0.loginWithRedirect();
+            };
+
+            const logout = () => {
+                auth0.logout({ returnTo: window.location.origin });
+            };
+
+            if (window.location.search.includes('code=') && window.location.search.includes('state=')) {
+                await auth0.handleRedirectCallback();
+                window.history.replaceState({}, document.title, window.location.pathname);
+                updateUI();
+            } else {
+                updateUI();
+            }
+
+            document.getElementById('login-btn').addEventListener('click', login);
+            document.getElementById('logout-btn').addEventListener('click', logout);
+        });
+    </script>
+</body>
+</html>

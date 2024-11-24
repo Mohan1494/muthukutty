@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book Lending App</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&display=swap">
+    <script src="https://cdn.auth0.com/js/auth0-spa-js/1.19/auth0-spa-js.production.js"></script>
+    <script src="https://unpkg.com/dropbox/dist/Dropbox-sdk.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Open Sans', sans-serif;
+            color: #6a6f8c;
+            background: #c8c8c8;
+        }
+
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            background-color: #333;
+            color: #fff;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+        }
+
+        .logo img {
+            width: 40px;
+            height: 40px;
+            margin-right: 10px;
+        }
+
+        .nav-links {
+            display: flex;
+            list-style: none;
+        }
+
+        .nav-links li {
+            margin-left: 20px;
+        }
+
+        .nav-links a {
+            color: #fff;
+            text-decoration: none;
+        }
+
+        #login-btn, #logout-btn {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 0 4px;
+            transition-duration: 0.4s;
+        }
+
+        #login-btn:hover, #logout-btn:hover {
+            background-color: white;
+            color: black;
+            border: 2px solid #4CAF50;
+        }
+
+        #user-profile {
+            margin-left: 20px;
+            font-size: 18px;
+        }
+
+        .container {
+            padding: 20px;
+            text-align: center;
+        }
+
+        .container input, .container button {
+            margin: 10px 0;
+            padding: 10px;
+            font-size: 16px;
+        }
+
+        .container button {
+            background-color: #1161ee;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+
+        .container button:hover {
+            background-color: #0d4cb5;
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <div class="logo">
+            <img src="logo.png" alt="Logo">
+            <span>Book Lending App</span>
+        </div>
+        <ul class="nav-links">
+            <li><a href="#home">Home</a></li>
+        </ul>
+        <div>
+            <button id="login-btn">Login</button>
+            <button id="logout-btn" style="display: none;">Logout</button>
+            <span id="user-profile"></span>
+        </div>
+    </nav>
+
+    <div class="container">
+        <input type="file" id="fileInput">
+        <br>
+        <input type="text" id="uploaded-file-name" placeholder="Enter file name to download">
+        <br>
+        <button id="download-btn">Download File</button>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const auth0 = await createAuth0Client({
+                domain: 'dev-rw0jbecmd0oawtq7.us.auth0.com',
+                client_id: 'EYga6e8Mx4gbanrQSXzRUJizQmciolQX',
+                redirect_uri: 'http://localhost:3000'
+            });
+
+            const dbx = new Dropbox.Dropbox({ accessToken: 'sl.CBUK0qL0VA68DiWKWUlK5byvhIenW0R8_fv0sxIiMDivwQ24PKH9_JMKvzASyWq1tXu7zk8jCu6GzMnqp85Dsp7WBxXCMWeL5IstzckrjckvJUW6ZVtzh9AlSQYXgBjovpnQ_bTsgRUJ' });
+
+            const updateUI = async () => {
+                const isAuthenticated = await auth0.isAuthenticated();
+                document.getElementById('login-btn').style.display = isAuthenticated ? 'none' : 'block';
+                document.getElementById('logout-btn').style.display = isAuthenticated ? 'block' : 'none';
+
+                if (isAuthenticated) {
+                    const user = await auth0.getUser();
+                    document.getElementById('user-profile').textContent = `Welcome, ${user.name}`;
+                } else {
+                    document.getElementById('user-profile').textContent = '';
+                }
+            };
+
+            const login = async () => {
+                await auth0.loginWithRedirect();
+            };
+
+            const logout = () => {
+                auth0.logout({ returnTo: window.location.origin });
+            };
+
+            if (window.location.search.includes('code=') && window.location.search.includes('state=')) {
+                await auth0.handleRedirectCallback();
+                window.history.replaceState({}, document.title, window.location.pathname);
+                updateUI();
+            } else {
+                updateUI();
+            }
+
+            document.getElementById('login-btn').addEventListener('click', login);
+            document.getElementById('logout-btn').addEventListener('click', logout);
+
+            document.getElementById('fileInput').addEventListener('change', async (event) => {
+                const file = event.target.files[0];
+                if (file) {
+                    try {
+                        await dbx.filesUpload({ path: '/lend/' + file.name, contents: file });
+                        alert('File uploaded successfully!');
+                    } catch (error) {
+                        alert('Error uploading file: ' + error.message);
+                    }
+                }
+            });
+
+            document.getElementById('download-btn').addEventListener('click', async () => {
+                const fileName = document.getElementById('uploaded-file-name').value;
+                if (!fileName) {
+                    alert('No file selected for download.');
+                    return;
+                }
+
+                try {
+                    const response = await dbx.filesDownload({ path: '/lend/' + fileName });
+                    const blob = response.result.fileBlob;
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = fileName;
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    URL.revokeObjectURL(url);
+                } catch (error) {
+                    alert('Error downloading file: ' + error.message);
+                }
+            });
+        });
+    </script>
+</body>
+</html>

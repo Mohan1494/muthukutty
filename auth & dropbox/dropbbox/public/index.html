@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dropbox Integration</title>
+    <script src="https://unpkg.com/dropbox/dist/Dropbox-sdk.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 50px;
+        }
+
+        input, button {
+            display: block;
+            margin: 20px auto;
+            padding: 10px;
+            font-size: 16px;
+        }
+
+        button {
+            background-color: #1161ee;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #0d4cb5;
+        }
+    </style>
+</head>
+<body>
+    <h1>Dropbox File Upload and Download</h1>
+    <input type="file" id="fileInput">
+    <input type="text" id="uploaded-file-name" placeholder="Enter file name to download">
+    <button id="download-btn">Download File</button>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const dbx = new Dropbox.Dropbox({
+                accessToken: 'sl.CBUK0qL0VA68DiWKWUlK5byvhIenW0R8_fv0sxIiMDivwQ24PKH9_JMKvzASyWq1tXu7zk8jCu6GzMnqp85Dsp7WBxXCMWeL5IstzckrjckvJUW6ZVtzh9AlSQYXgBjovpnQ_bTsgRUJ'
+            });
+
+            // File Upload
+            document.getElementById('fileInput').addEventListener('change', async (event) => {
+                const file = event.target.files[0];
+                if (file) {
+                    try {
+                        await dbx.filesUpload({ path: '/files/' + file.name, contents: file });
+                        alert('File uploaded successfully!');
+                    } catch (error) {
+                        alert('Error uploading file: ' + error.message);
+                    }
+                }
+            });
+
+            // File Download
+            document.getElementById('download-btn').addEventListener('click', async () => {
+                const fileName = document.getElementById('uploaded-file-name').value;
+                if (!fileName) {
+                    alert('No file selected for download.');
+                    return;
+                }
+
+                try {
+                    const response = await dbx.filesDownload({ path: '/files/' + fileName });
+                    const blob = response.result.fileBlob;
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = fileName;
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    URL.revokeObjectURL(url);
+                } catch (error) {
+                    alert('Error downloading file: ' + error.message);
+                }
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,20 @@
+https://github.com/Cloudslab/cloudsim/releases/tag/5.0
+
+https://commons.apache.org/proper/commons-math/download_math.cgi
+
+Open Eclipse.
+ Go to File  NewProject.
+ Select Java Project, and then click Next.
+ Enter a project name (e.g., CloudSim).
+ Set path to the unzipped source code of cloud sim.
+ Click Finish.
+ Add CloudSim Source Files
+
+Right-click the project name (CloudSim) in Package Explorer.
+ Select Properties.
+ Click Java Build Path on the left.
+ Select the Libraries tab.
+ Click Add External JARs.
+ Navigate to the folder where you unzipped the Commons Math library.
+ Select all the JAR files inside the folder and click Open.
+ Once added, click Apply and then Apply and Close. 
